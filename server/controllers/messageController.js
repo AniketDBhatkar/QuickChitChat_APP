@@ -16,14 +16,20 @@ export const getUserForSideBar = async (req, res) => {
                 receiverId: userId,
                 seen: false
             });
-
             if (messages.length > 0) {
                 unseenMessage[user._id] = messages.length;
             }
         });
 
         await Promise.all(promise);
-        res.json({ success: true, user: filteredUsers, unseenMessage });
+
+        // ✅ Fix: Send keys that match frontend
+        res.json({ 
+            success: true, 
+            users: filteredUsers, 
+            unseenMessages: unseenMessage 
+        });
+
     } catch (error) {
         console.log(error.message);
         res.json({ success: false, message: error.message });

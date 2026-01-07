@@ -5,26 +5,27 @@ import toast from "react-hot-toast";
 export const ChatContext = createContext();
 
 export const ChatProvider = ({ children }) => {
-
     const [messages, setMessages] = useState([]);
     const [users, setUsers] = useState([]);
     const [selectedUser, setSelectedUser] = useState(null);
     const [unseenMessages, setUnseenMessages] = useState({});
 
-    const { socket, axios } = useContext(AuthContext);
+    const { socket, axios, authUser } = useContext(AuthContext);
 
+    // ✅ Get all users
     const getUsers = async () => {
         try {
             const { data } = await axios.get("/api/messages/users");
             if (data.success) {
-                setUsers(data.users);
-                setUnseenMessages(data.unseenMessages);
+                setUsers(data.users || []);
+                setUnseenMessages(data.unseenMessages || {});
             }
         } catch (error) {
             toast.error(error.message);
         }
     };
 
+    // Get messages with a user
     const getMessages = async (userId) => {
         try {
             const { data } = await axios.get(`/api/messages/${userId}`);
@@ -36,7 +37,7 @@ export const ChatProvider = ({ children }) => {
         }
     };
 
-    // ✅ FIX: renamed function
+    // Send message
     const sendMessages = async (messageData) => {
         if (!selectedUser) return;
 
@@ -56,6 +57,7 @@ export const ChatProvider = ({ children }) => {
         }
     };
 
+    // Subscribe to socket messages
     const subscribeToMessages = () => {
         if (!socket) return;
 
@@ -80,6 +82,11 @@ export const ChatProvider = ({ children }) => {
         if (socket) socket.off("newMessage");
     };
 
+    // ✅ Fetch users once authUser is ready
+    useEffect(() => {
+        if (authUser) getUsers();
+    }, [authUser]);
+
     useEffect(() => {
         subscribeToMessages();
         return () => unsubscribeFromMessages();
@@ -92,7 +99,7 @@ export const ChatProvider = ({ children }) => {
         unseenMessages,
         getUsers,
         getMessages,
-        sendMessages,          // ✅ FIX
+        sendMessages,
         setSelectedUser,
         setUsers,
         setMessages,
